@@ -1,0 +1,241 @@
+#+TITLE: Mundane Clojure for Mortals: Let's build a Web API
+#+AUTHOR: Nils Blum-Oeste
+#+EMAIL: nblu.com
+#+LANGUAGE: en
+#+STARTUP: align hidestars lognotestate
+#+INFOJS_OPT: view:info toc:nil
+#+HTML_HEAD: <script src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
+#+HTML_HEAD: <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+#+HTML_HEAD: <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/languages/clojure.min.js"></script>
+#+HTML_HEAD: <script src="weave-resources/export.js"></script>
+#+HTML_HEAD: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/monokai.min.css">
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" />
+#+HTML_HEAD_EXTRA: <style type="text/css">body {padding-left: 10%; padding-right: 10%;}</style>
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="weave-resources/htmlize.css" />
+#+OPTIONS: :html-include-style t
+
+* Introduction
+
+  This project illustrates the basic of building a web API with Clojure. Empasis is on using simple approaches, allowing
+  Clojure beginners to get started easily. It's not about illustrating the best, state-of-the-art way of building such
+  an API with Clojure.
+
+  For a more sophisticated, advanced and structured approach have a look at [[https://github.com/weavejester/duct][duct]] for example.
+
+* Setting up a new project
+
+  You need to have [[https://www.java.com/en/download/help/index_installing.xml][Java installed]]. Things should also work with the .Net CLR, I don't have any experience or interest in
+  that. Should you try the CLR, please let me know how it goes.
+
+
+** Project automation and dependecy Management with Leiningen
+
+   To manage the project dependencies, build the project and handle various tasks during development we are going to use
+   Leiningen. Leiningen is a de-factor standard in the Clojure world and very mature.
+
+   To get Leiningen simply follow the installation instruction on the homepage: http://leiningen.org/
+
+   Recently [[https://github.com/boot-clj/boot][Boot]] was introduced as an
+   interesting alternative, especially when working on an application (in contrast to library). If you are interested,
+   please have a look at [[https://github.com/boot-clj/boot][Boot]], too!
+
+   In the following sections we are going to use Leiningen and you will learn about how to use it on the go.
+
+
+** Create your new project
+
+   To get started, create a new project using Leiningen:
+
+   #+BEGIN_SRC bash
+   $ lein new api-for-mortals
+   #+END_SRC
+
+   This will create a new project in a subdirectory called =api-for-mortals=. The project name is also used for the
+   Clojure namespaces being created.
+
+** Adding some basic dependencies
+
+   The central point for the declarative leiningen project configuration is =project.clj= which can be found in the
+   project's root directory. It should look a lot like this:
+
+   #+BEGIN_SRC clojure
+   (defproject api-for-mortals "0.1.0-SNAPSHOT"
+     :description "FIXME: write description"
+     :url "http://example.com/FIXME"
+     :license {:name "Eclipse Public License"
+               :url "http://www.eclipse.org/legal/epl-v10.html"}
+     :dependencies [[org.clojure/clojure "1.6.0"]])
+   #+END_SRC
+
+   This defines your project. The first two parameters to =defproject=  are the project name and the version,
+   =:description=, =:url= and =:license= should be self explaining. =:dependencies= is a list of lists definining the
+   project's dependencies. As you can see, Clojure itself is a dependency of the project. This makes it very easy to use
+   a specific version of Clojure in your project (and another version in any other project).
+
+* HTTP handling: One Ring to rule them all!
+
+  [[https://github.com/ring-clojure/ring][Ring]] is a Clojure library to handle HTTP requests with similarities from Python's WSGI and Ruby's Rack. Ring is
+  another de-factor standard in the Clojure world. Many other libraries build on top of Ring.
+
+  To use it in our project, we need to add it as a dependency in =project.clj=. Make your dependecies list look like
+  this:
+  #+BEGIN_SRC clojure
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [ring/ring-core "1.3.2"]
+                 [ring/ring-jetty-adapter "1.3.2"]]
+  #+END_SRC
+
+  We added the core ring module and the HTTP server http-kit.
+
+  The next time we run any =lein= task, it will automatically pull the libraries from [[https://clojars.org/][Clojars]].
+
+** Handling our first HTTP request
+
+   Nothin more is needed to start building our web API. To actually handle requests, we need to define Ring handlers.
+   Handlers are functions which take a map representing the request as input and return a map representing the
+   response.
+
+   Let's write our first handler in =src/api_for_mortals/core.clj=:
+
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/core.clj
+   (ns api-for-mortals.core)
+
+   (defn hello-handler [request]
+     {:status 200
+      :headers {"Content-Type" "text/plain"}
+      :body (str "Hello " (:body request))})
+   #+END_SRC
+
+   This simple handler is a pure function and their at no dependencies for the namespace at all! It simply transforms
+   the input map (request) to an output map (response), operating on simple, basic data structures.
+
+
+** Convenience: Ring plugin for Leiningen
+
+   We can make using Ring a bit more comfortable by using the Lein-Ring plugin. Add this map to =project.clj=:
+
+   #+BEGIN_SRC clojure
+   :plugins [[lein-ring "0.9.1"]]
+   :ring {:handler api-for-mortals.core/hello-handler}
+   #+END_SRC
+
+   Now run =lein ring server= in the project root directory to start your web application. Head over to
+   http://localhost:3000 to see the response from your ring handler.
+
+* Better responses: Ring middlewares
+
+  #+BEGIN_SRC clojure
+  [ring/ring-json "0.3.1"]
+  #+END_SRC
+
+  Creating a new handler which returns the request map as json data:
+
+  #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/core.clj
+  (require '[ring.middleware.json :as json])
+  (def hello-json-handler
+    (json/wrap-json-response
+      (fn [req] {:status 200 :body (dissoc req :body)})))
+  #+END_SRC
+
+  =request :body= is an InputStream which cannot be parsed by the json middleware, thus we remove it from the response.
+
+  Let's also update the ring config to use the new handler when running =lein ring server=:
+
+  #+BEGIN_SRC clojure
+  :ring {:handler api-for-mortals.core/hello-json-handler}
+  #+END_SRC
+
+* Convenient routing with Compojure
+ - COMMENT Put this before ring middlewares?
+
+   Add =compojure= dependecy to =project.clj=:
+
+   #+BEGIN_SRC clojure
+   [compojure "1.3.1"]
+   #+END_SRC
+
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
+   (ns api-for-mortals.server
+     (:require [clojure.edn :as edn]
+               [compojure.core :refer :all]
+               [compojure.route :as route]
+               [ring.middleware.json :as json]
+               [ring.middleware.params :as params]))
+
+   (defn rnd-int-in-range [min max]
+     (+ min (rand-int (+ (- max min) 1))))
+
+   (defn randomizer [min-str max-str]
+     (let [min (edn/read-string min-str)
+           max (edn/read-string max-str)]
+       (rnd-int-in-range min max)))
+
+   (defroutes api-routes
+     (GET "/bounce-request" request {:body (dissoc request :body)})
+     (GET "/users/:id" [id] {:body {:name "foo" :id id :role "admin"}})
+     (GET "/randomizer" [min max] {:body {"randomNumber" (randomizer min max)}})
+     (route/not-found {:body {:error "Page not found"}}))
+
+   (def api-app
+     (-> api-routes
+       params/wrap-params
+       json/wrap-json-response))
+   #+END_SRC
+* Always respond properly: Liberator
+* Sweet APIs: Compojure-Swagger
+  https://github.com/metosin/compojure-api#sample-minimalistic-swaggered-app
+
+  Add the dependencies for the API library and the API testing UI to =project.clj=:
+  #+BEGIN_SRC clojure
+  [metosin/compojure-api "0.17.0"]
+  [metosin/ring-swagger-ui "2.1.1-M1"]
+  #+END_SRC
+
+
+  #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/swagger.clj
+  (ns api-for-mortals.swagger
+    (:require [ring.util.http-response :refer [ok]]
+              [compojure.api.sweet :refer :all]))
+
+  (defapi api
+    (swagger-ui)
+    (swagger-docs)
+    (swaggered "jolts"
+      :description "My awesome Jolt API"
+      (context "/api" []
+        (GET* "/jolts/:id" [id]
+          (ok {:id id}))
+        (POST* "/jolts" []
+          :body-params [body :- Long]
+          (ok {:data body})))))
+  #+END_SRC
+
+* Authentication and Authorization: <Friend?>
+* Connecting a database
+* Integrating other HTTP services
+* Deployment
+* Automated Testing
+* Appendix
+** Important Ring Concepts
+
+ - Handlers :: Ring handlers are Clojure functions taking a map representing the HTTP requests as an argument and
+      return a map representing the HTTP response. Thus handlers transform requests into repsonses.
+      ([[https://github.com/ring-clojure/ring/wiki/Concepts#requests][Request Map Reference]], [[https://github.com/ring-clojure/ring/wiki/Concepts#responses][Response Map Reference]]).
+
+ - Middleware :: Middleware are higher order functions taking a handler as an argument and returning a new,
+      transformed handler. Middleware extends the handling of raw HTTP requests to add functionalities like request
+      parameters, sessions, file uploading etc.
+
+      Middleware example:
+      #+BEGIN_SRC clojure
+      ;; defining the middleware
+      (defn wrap-content-type [handler content-type]
+        (fn[request]
+          (let [response (handler request)]
+            (assoc-in response [:headers "Content-Type"] content-type))))
+
+      ;; wrapping the middleware around a handler
+      (def app (wrap-content-type handler "text/html"))
+      #+END_SRC
+
+ - Adapters :: Adapters connect Ring to web servers like Jetty, http-kit, etc.

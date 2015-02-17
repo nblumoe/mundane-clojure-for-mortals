@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mundane Clojure for Mortals: Let's build a Web API</title>
+<!-- 2015-02-17 Di 19:11 -->
+<meta  charset="utf-8">
+<meta  name="generator" content="Org-mode">
+<meta  name="author" content="Nils Blum-Oeste">
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  /*]]>*/-->
+</style>
+<script src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/languages/clojure.min.js"></script>
+<script src="weave-resources/export.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/monokai.min.css">
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="weave-resources/htmlize.css" />
+<style type="text/css">body {padding-left: 10%; padding-right: 10%;}</style>
+<script type="text/javascript" src="http://orgmode.org/org-info.js">
+/**
+ *
+ * @source: http://orgmode.org/org-info.js
+ *
+ * @licstart  The following is the entire license notice for the
+ *  JavaScript code in http://orgmode.org/org-info.js.
+ *
+ * Copyright (C) 2012-2013 Free Software Foundation, Inc.
+ *
+ *
+ * The JavaScript code in this tag is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GNU GPL) as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option)
+ * any later version.  The code is distributed WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+ *
+ * As additional permission under GNU GPL version 3 section 7, you
+ * may distribute non-source (e.g., minimized or compacted) forms of
+ * that code without the copy of the GNU GPL normally required by
+ * section 4, provided you include this license notice and a URL
+ * through which recipients can access the Corresponding Source.
+ *
+ * @licend  The above is the entire license notice
+ * for the JavaScript code in http://orgmode.org/org-info.js.
+ *
+ */
+</script>
+
+<script type="text/javascript">
+
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+
+<!--/*--><![CDATA[/*><!--*/
+org_html_manager.set("TOC_DEPTH", "3");
+org_html_manager.set("LINK_HOME", "");
+org_html_manager.set("LINK_UP", "");
+org_html_manager.set("LOCAL_TOC", "1");
+org_html_manager.set("VIEW_BUTTONS", "0");
+org_html_manager.set("MOUSE_HINT", "underline");
+org_html_manager.set("FIXED_TOC", "0");
+org_html_manager.set("TOC", "0");
+org_html_manager.set("VIEW", "info");
+org_html_manager.setup();  // activate after the parameters are set
+/*]]>*///-->
+</script>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Mundane Clojure for Mortals: Let's build a Web API</h1>
+<nav id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1. Introduction</a></li>
+<li><a href="#sec-2">2. Setting up a new project</a>
+<ul>
+<li><a href="#sec-2-1">2.1. Project automation and dependecy Management with Leiningen</a></li>
+<li><a href="#sec-2-2">2.2. Create your new project</a></li>
+<li><a href="#sec-2-3">2.3. Adding some basic dependencies</a></li>
+</ul>
+</li>
+<li><a href="#sec-3">3. HTTP handling: One Ring to rule them all!</a>
+<ul>
+<li><a href="#sec-3-1">3.1. Handling our first HTTP request</a></li>
+<li><a href="#sec-3-2">3.2. Convenience: Ring plugin for Leiningen</a></li>
+</ul>
+</li>
+<li><a href="#sec-4">4. Better responses: Ring middlewares</a></li>
+<li><a href="#sec-5">5. Convenient routing with Compojure</a></li>
+<li><a href="#sec-6">6. Always respond properly: Liberator</a></li>
+<li><a href="#sec-7">7. Sweet APIs: Compojure-Swagger</a></li>
+<li><a href="#sec-8">8. Authentication and Authorization: &lt;Friend?&gt;</a></li>
+<li><a href="#sec-9">9. Connecting a database</a></li>
+<li><a href="#sec-10">10. Integrating other HTTP services</a></li>
+<li><a href="#sec-11">11. Deployment</a></li>
+<li><a href="#sec-12">12. Automated Testing</a></li>
+<li><a href="#sec-13">13. Appendix</a>
+<ul>
+<li><a href="#sec-13-1">13.1. Important Ring Concepts</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav>
+
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+This project illustrates the basic of building a web API with Clojure. Empasis is on using simple approaches, allowing
+Clojure beginners to get started easily. It's not about illustrating the best, state-of-the-art way of building such
+an API with Clojure.
+</p>
+
+<p>
+For a more sophisticated, advanced and structured approach have a look at <a href="https://github.com/weavejester/duct">duct</a> for example.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Setting up a new project</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+You need to have <a href="https://www.java.com/en/download/help/index_installing.xml">Java installed</a>. Things should also work with the .Net CLR, I don't have any experience or interest in
+that. Should you try the CLR, please let me know how it goes.
+</p>
+</div>
+
+
+<div id="outline-container-sec-2-1" class="outline-3">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> Project automation and dependecy Management with Leiningen</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+To manage the project dependencies, build the project and handle various tasks during development we are going to use
+Leiningen. Leiningen is a de-factor standard in the Clojure world and very mature.
+</p>
+
+<p>
+To get Leiningen simply follow the installation instruction on the homepage: <a href="http://leiningen.org/">http://leiningen.org/</a>
+</p>
+
+<p>
+Recently <a href="https://github.com/boot-clj/boot">Boot</a> was introduced as an
+interesting alternative, especially when working on an application (in contrast to library). If you are interested,
+please have a look at <a href="https://github.com/boot-clj/boot">Boot</a>, too!
+</p>
+
+<p>
+In the following sections we are going to use Leiningen and you will learn about how to use it on the go.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-sec-2-2" class="outline-3">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> Create your new project</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+To get started, create a new project using Leiningen:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-bash">$ lein new api-for-mortals
+</pre>
+</div>
+
+<p>
+This will create a new project in a subdirectory called <code>api-for-mortals</code>. The project name is also used for the
+Clojure namespaces being created.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-2-3" class="outline-3">
+<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Adding some basic dependencies</h3>
+<div class="outline-text-3" id="text-2-3">
+<p>
+The central point for the declarative leiningen project configuration is <code>project.clj</code> which can be found in the
+project's root directory. It should look a lot like this:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(defproject api-for-mortals "0.1.0-SNAPSHOT"
+  :description "FIXME: write description"
+  :url "http://example.com/FIXME"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :dependencies [[org.clojure/clojure "1.6.0"]])
+</pre>
+</div>
+
+<p>
+This defines your project. The first two parameters to <code>defproject</code>  are the project name and the version,
+<code>:description</code>, <code>:url</code> and <code>:license</code> should be self explaining. <code>:dependencies</code> is a list of lists definining the
+project's dependencies. As you can see, Clojure itself is a dependency of the project. This makes it very easy to use
+a specific version of Clojure in your project (and another version in any other project).
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> HTTP handling: One Ring to rule them all!</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+<a href="https://github.com/ring-clojure/ring">Ring</a> is a Clojure library to handle HTTP requests with similarities from Python's WSGI and Ruby's Rack. Ring is
+another de-factor standard in the Clojure world. Many other libraries build on top of Ring.
+</p>
+
+<p>
+To use it in our project, we need to add it as a dependency in <code>project.clj</code>. Make your dependecies list look like
+this:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure">:dependencies [[org.clojure/clojure "1.6.0"]
+               [ring/ring-core "1.3.2"]
+               [ring/ring-jetty-adapter "1.3.2"]]
+</pre>
+</div>
+
+<p>
+We added the core ring module and the HTTP server http-kit.
+</p>
+
+<p>
+The next time we run any <code>lein</code> task, it will automatically pull the libraries from <a href="https://clojars.org/">Clojars</a>.
+</p>
+</div>
+
+<div id="outline-container-sec-3-1" class="outline-3">
+<h3 id="sec-3-1"><span class="section-number-3">3.1</span> Handling our first HTTP request</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+Nothin more is needed to start building our web API. To actually handle requests, we need to define Ring handlers.
+Handlers are functions which take a map representing the request as input and return a map representing the
+response.
+</p>
+
+<p>
+Let's write our first handler in <code>src/api_for_mortals/core.clj</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(ns api-for-mortals.core)
+
+(defn hello-handler [request]
+  {:status 200
+   :headers {"Content-Type" "text/plain"}
+   :body (str "Hello " (:body request))})
+</pre>
+</div>
+
+<p>
+This simple handler is a pure function and their at no dependencies for the namespace at all! It simply transforms
+the input map (request) to an output map (response), operating on simple, basic data structures.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-sec-3-2" class="outline-3">
+<h3 id="sec-3-2"><span class="section-number-3">3.2</span> Convenience: Ring plugin for Leiningen</h3>
+<div class="outline-text-3" id="text-3-2">
+<p>
+We can make using Ring a bit more comfortable by using the Lein-Ring plugin. Add this map to <code>project.clj</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">:plugins [[lein-ring "0.9.1"]]
+:ring {:handler api-for-mortals.core/hello-handler}
+</pre>
+</div>
+
+<p>
+Now run <code>lein ring server</code> in the project root directory to start your web application. Head over to
+<a href="http://localhost:3000/">http://localhost:3000/</a> to see the response from your ring handler.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> Better responses: Ring middlewares</h2>
+<div class="outline-text-2" id="text-4">
+<div class="org-src-container">
+
+<pre class="src src-clojure">[ring/ring-json "0.3.1"]
+</pre>
+</div>
+
+<p>
+Creating a new handler which returns the request map as json data:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(require '[ring.middleware.json :as json])
+(def hello-json-handler
+  (json/wrap-json-response
+    (fn [req] {:status 200 :body (dissoc req :body)})))
+</pre>
+</div>
+
+<p>
+<code>request :body</code> is an InputStream which cannot be parsed by the json middleware, thus we remove it from the response.
+</p>
+
+<p>
+Let's also update the ring config to use the new handler when running <code>lein ring server</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">:ring {:handler api-for-mortals.core/hello-json-handler}
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Convenient routing with Compojure</h2>
+<div class="outline-text-2" id="text-5">
+<ul class="org-ul">
+<li><p>
+COMMENT Put this before ring middlewares?
+</p>
+
+<p>
+Add <code>compojure</code> dependecy to <code>project.clj</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">[compojure "1.3.1"]
+</pre>
+</div></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-sec-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> Always respond properly: Liberator</h2>
+</div>
+<div id="outline-container-sec-7" class="outline-2">
+<h2 id="sec-7"><span class="section-number-2">7</span> Sweet APIs: Compojure-Swagger</h2>
+<div class="outline-text-2" id="text-7">
+<p>
+<a href="https://github.com/metosin/compojure-api#sample-minimalistic-swaggered-app">https://github.com/metosin/compojure-api#sample-minimalistic-swaggered-app</a>
+</p>
+
+<p>
+Add the dependencies for the API library and the API testing UI to <code>project.clj</code>:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure">[metosin/compojure-api "0.17.0"]
+[metosin/ring-swagger-ui "2.1.1-M1"]
+</pre>
+</div>
+
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(ns api-for-mortals.swagger
+  (:require [ring.util.http-response :refer [ok]]
+            [compojure.api.sweet :refer :all]))
+
+(defapi api
+  (swagger-ui)
+  (swagger-docs)
+  (swaggered "jolts"
+    :description "My awesome Jolt API"
+    (context "/api" []
+      (GET* "/jolts/:id" [id]
+        (ok {:id id}))
+      (POST* "/jolts" []
+        :body-params [body :- Long]
+        (ok {:data body})))))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-8" class="outline-2">
+<h2 id="sec-8"><span class="section-number-2">8</span> Authentication and Authorization: &lt;Friend?&gt;</h2>
+</div>
+<div id="outline-container-sec-9" class="outline-2">
+<h2 id="sec-9"><span class="section-number-2">9</span> Connecting a database</h2>
+</div>
+<div id="outline-container-sec-10" class="outline-2">
+<h2 id="sec-10"><span class="section-number-2">10</span> Integrating other HTTP services</h2>
+</div>
+<div id="outline-container-sec-11" class="outline-2">
+<h2 id="sec-11"><span class="section-number-2">11</span> Deployment</h2>
+</div>
+<div id="outline-container-sec-12" class="outline-2">
+<h2 id="sec-12"><span class="section-number-2">12</span> Automated Testing</h2>
+</div>
+<div id="outline-container-sec-13" class="outline-2">
+<h2 id="sec-13"><span class="section-number-2">13</span> Appendix</h2>
+<div class="outline-text-2" id="text-13">
+</div><div id="outline-container-sec-13-1" class="outline-3">
+<h3 id="sec-13-1"><span class="section-number-3">13.1</span> Important Ring Concepts</h3>
+<div class="outline-text-3" id="text-13-1">
+<dl class="org-dl">
+<dt>Handlers</dt><dd>Ring handlers are Clojure functions taking a map representing the HTTP requests as an argument and
+return a map representing the HTTP response. Thus handlers transform requests into repsonses.
+(<a href="https://github.com/ring-clojure/ring/wiki/Concepts#requests">Request Map Reference</a>, <a href="https://github.com/ring-clojure/ring/wiki/Concepts#responses">Response Map Reference</a>).</dd>
+
+<dt>Middleware</dt><dd><p>
+Middleware are higher order functions taking a handler as an argument and returning a new,
+transformed handler. Middleware extends the handling of raw HTTP requests to add functionalities like request
+parameters, sessions, file uploading etc.
+</p>
+
+<p>
+Middleware example:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure">;; defining the middleware
+(defn wrap-content-type [handler content-type]
+  (fn[request]
+    (let [response (handler request)]
+      (assoc-in response [:headers "Content-Type"] content-type))))
+
+;; wrapping the middleware around a handler
+(def app (wrap-content-type handler "text/html"))
+</pre>
+</div></dd>
+
+<dt>Adapters</dt><dd>Adapters connect Ring to web servers like Jetty, http-kit, etc.</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Nils Blum-Oeste</p>
+<p class="date">Created: 2015-02-17 Di 19:11</p>
+<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.3.1 (<a href="http://orgmode.org">Org</a> mode 8.3beta)</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
