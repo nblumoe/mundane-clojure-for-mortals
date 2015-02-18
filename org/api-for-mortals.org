@@ -152,20 +152,42 @@
 * Convenient routing with Compojure
  - COMMENT Put this before ring middlewares?
 
-   Add =compojure= dependecy to =project.clj=:
+   [[https://github.com/weavejester/compojure][Compojure]] is a popular library to handle routing in Ring applications.
+
+   To use it, simply add the dependecy to =project.clj=:
 
    #+BEGIN_SRC clojure
    [compojure "1.3.1"]
    #+END_SRC
 
-   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
-   (ns api-for-mortals.server
-     (:require [clojure.edn :as edn]
-               [compojure.core :refer :all]
-               [compojure.route :as route]
-               [ring.middleware.json :as json]
-               [ring.middleware.params :as params]))
+** Namespace setup
 
+   Setup a new file and namespace for the compojure handlers:
+
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
+      (ns api-for-mortals.server
+        (:require [compojure.core :refer :all]
+                  [compojure.route :as route]
+                  [clojure.edn :as edn]
+                  [ring.middleware.json :as json]
+                  [ring.middleware.params :as params]))
+   #+END_SRC
+
+   - compojure :: =compojure.core= has the main functions we need to define routes with compojure and =compojure.route=
+        offers a convenient, premade route to handle missing routes with an 404 HTTP error.
+
+
+  - clojure.edn :: [[https://github.com/edn-format/edn][EDN (Extensible Data Notation)]] is a data format, a subset of the Clojure data notation. It's worth having a look at
+       it. Here we are only using it to coerce string parameters from HTTP requests to integers via =clojure.edn/read-string=.
+
+
+   - ring.middleware :: =ring.middleware.json= we already know, we use it to build proper JSON responses. =ring.middleware.params= is used to
+        extract parameters from the request's query string.
+
+
+** Some functions to produce "meaningful" output
+
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
    (defn rnd-int-in-range [min max]
      (+ min (rand-int (+ (- max min) 1))))
 
@@ -173,13 +195,19 @@
      (let [min (edn/read-string min-str)
            max (edn/read-string max-str)]
        (rnd-int-in-range min max)))
+   #+END_SRC
 
+** Defining routes and their handlers
+
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
    (defroutes api-routes
      (GET "/bounce-request" request {:body (dissoc request :body)})
      (GET "/users/:id" [id] {:body {:name "foo" :id id :role "admin"}})
      (GET "/randomizer" [min max] {:body {"randomNumber" (randomizer min max)}})
      (route/not-found {:body {:error "Page not found"}}))
+   #+END_SRC
 
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
    (def api-app
      (-> api-routes
        params/wrap-params

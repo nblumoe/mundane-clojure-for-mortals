@@ -2,99 +2,19 @@
 <html>
 <head>
 <title>Mundane Clojure for Mortals: Let's build a Web API</title>
-<!-- 2015-02-17 Di 19:11 -->
+<!-- 2015-02-18 Mi 21:19 -->
 <meta  charset="utf-8">
 <meta  name="generator" content="Org-mode">
 <meta  name="author" content="Nils Blum-Oeste">
-<style type="text/css">
- <!--/*--><![CDATA[/*><!--*/
-  .title  { text-align: center; }
-  .todo   { font-family: monospace; color: red; }
-  .done   { font-family: monospace; color: green; }
-  .priority { font-family: monospace; color: orange; }
-  .tag    { background-color: #eee; font-family: monospace;
-            padding: 2px; font-size: 80%; font-weight: normal; }
-  .timestamp { color: #bebebe; }
-  .timestamp-kwd { color: #5f9ea0; }
-  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
-  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
-  .center { margin-left: auto; margin-right: auto; text-align: center; }
-  .underline { text-decoration: underline; }
-  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
-  p.verse { margin-left: 3%; }
-  pre {
-    border: 1px solid #ccc;
-    box-shadow: 3px 3px 3px #eee;
-    padding: 8pt;
-    font-family: monospace;
-    overflow: auto;
-    margin: 1.2em;
-  }
-  pre.src {
-    position: relative;
-    overflow: visible;
-    padding-top: 1.2em;
-  }
-  pre.src:before {
-    display: none;
-    position: absolute;
-    background-color: white;
-    top: -10px;
-    right: 10px;
-    padding: 3px;
-    border: 1px solid black;
-  }
-  pre.src:hover:before { display: inline;}
-  pre.src-sh:before    { content: 'sh'; }
-  pre.src-bash:before  { content: 'sh'; }
-  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
-  pre.src-R:before     { content: 'R'; }
-  pre.src-perl:before  { content: 'Perl'; }
-  pre.src-java:before  { content: 'Java'; }
-  pre.src-sql:before   { content: 'SQL'; }
-
-  table { border-collapse:collapse; }
-  caption.t-above { caption-side: top; }
-  caption.t-bottom { caption-side: bottom; }
-  td, th { vertical-align:top;  }
-  th.right  { text-align: center;  }
-  th.left   { text-align: center;   }
-  th.center { text-align: center; }
-  td.right  { text-align: right;  }
-  td.left   { text-align: left;   }
-  td.center { text-align: center; }
-  dt { font-weight: bold; }
-  .footpara:nth-child(2) { display: inline; }
-  .footpara { display: block; }
-  .footdef  { margin-bottom: 1em; }
-  .figure { padding: 1em; }
-  .figure p { text-align: center; }
-  .inlinetask {
-    padding: 10px;
-    border: 2px solid gray;
-    margin: 10px;
-    background: #ffffcc;
-  }
-  #org-div-home-and-up
-   { text-align: right; font-size: 70%; white-space: nowrap; }
-  textarea { overflow-x: auto; }
-  .linenr { font-size: smaller }
-  .code-highlighted { background-color: #ffff00; }
-  .org-info-js_info-navigation { border-style: none; }
-  #org-info-js_console-label
-    { font-size: 10px; font-weight: bold; white-space: nowrap; }
-  .org-info-js_search-highlight
-    { background-color: #ffff00; color: #000000; font-weight: bold; }
-  /*]]>*/-->
-</style>
 <script src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
 <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
 <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/languages/clojure.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/languages/bash.min.js"></script>
 <script src="weave-resources/export.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/monokai.min.css">
 <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" />
 <link rel="stylesheet" type="text/css" href="weave-resources/htmlize.css" />
-<style type="text/css">body {padding-left: 10%; padding-right: 10%;}</style>
+
 <script type="text/javascript" src="http://orgmode.org/org-info.js">
 /**
  *
@@ -161,7 +81,7 @@ org_html_manager.set("LOCAL_TOC", "1");
 org_html_manager.set("VIEW_BUTTONS", "0");
 org_html_manager.set("MOUSE_HINT", "underline");
 org_html_manager.set("FIXED_TOC", "0");
-org_html_manager.set("TOC", "0");
+org_html_manager.set("TOC", "1");
 org_html_manager.set("VIEW", "info");
 org_html_manager.setup();  // activate after the parameters are set
 /*]]>*///-->
@@ -235,7 +155,13 @@ for the JavaScript code in this tag.
 </ul>
 </li>
 <li><a href="#sec-4">4. Better responses: Ring middlewares</a></li>
-<li><a href="#sec-5">5. Convenient routing with Compojure</a></li>
+<li><a href="#sec-5">5. Convenient routing with Compojure</a>
+<ul>
+<li><a href="#sec-5-1">5.1. Namespace setup</a></li>
+<li><a href="#sec-5-2">5.2. Some functions to produce "meaningful" output</a></li>
+<li><a href="#sec-5-3">5.3. Defining routes and their handlers</a></li>
+</ul>
+</li>
 <li><a href="#sec-6">6. Always respond properly: Liberator</a></li>
 <li><a href="#sec-7">7. Sweet APIs: Compojure-Swagger</a></li>
 <li><a href="#sec-8">8. Authentication and Authorization: &lt;Friend?&gt;</a></li>
@@ -481,7 +407,11 @@ COMMENT Put this before ring middlewares?
 </p>
 
 <p>
-Add <code>compojure</code> dependecy to <code>project.clj</code>:
+<a href="https://github.com/weavejester/compojure">Compojure</a> is a popular library to handle routing in Ring applications.
+</p>
+
+<p>
+To use it, simply add the dependecy to <code>project.clj</code>:
 </p>
 
 <div class="org-src-container">
@@ -490,6 +420,85 @@ Add <code>compojure</code> dependecy to <code>project.clj</code>:
 </pre>
 </div></li>
 </ul>
+</div>
+
+<div id="outline-container-sec-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> Namespace setup</h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+Setup a new file and namespace for the compojure handlers:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(ns api-for-mortals.server
+  (:require [compojure.core :refer :all]
+            [compojure.route :as route]
+            [clojure.edn :as edn]
+            [ring.middleware.json :as json]
+            [ring.middleware.params :as params]))
+</pre>
+</div>
+
+<dl class="org-dl">
+<dt>compojure</dt><dd><code>compojure.core</code> has the main functions we need to define routes with compojure and <code>compojure.route</code>
+        offers a convenient, premade route to handle missing routes with an 404 HTTP error.</dd>
+</dl>
+
+
+<dl class="org-dl">
+<dt>clojure.edn</dt><dd><a href="https://github.com/edn-format/edn">EDN (Extensible Data Notation)</a> is a data format, a subset of the Clojure data notation. It's worth having a look at
+it. Here we are only using it to coerce string parameters from HTTP requests to integers via <code>clojure.edn/read-string</code>.</dd>
+</dl>
+
+
+<dl class="org-dl">
+<dt>ring.middleware</dt><dd><code>ring.middleware.json</code> we already know, we use it to build proper JSON responses. <code>ring.middleware.params</code> is used to
+extract parameters from the request's query string.</dd>
+</dl>
+</div>
+</div>
+
+
+<div id="outline-container-sec-5-2" class="outline-3">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> Some functions to produce "meaningful" output</h3>
+<div class="outline-text-3" id="text-5-2">
+<div class="org-src-container">
+
+<pre class="src src-clojure">(defn rnd-int-in-range [min max]
+  (+ min (rand-int (+ (- max min) 1))))
+
+(defn randomizer [min-str max-str]
+  (let [min (edn/read-string min-str)
+        max (edn/read-string max-str)]
+    (rnd-int-in-range min max)))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-5-3" class="outline-3">
+<h3 id="sec-5-3"><span class="section-number-3">5.3</span> Defining routes and their handlers</h3>
+<div class="outline-text-3" id="text-5-3">
+<div class="org-src-container">
+
+<pre class="src src-clojure">(defroutes api-routes
+  (GET "/bounce-request" request {:body (dissoc request :body)})
+  (GET "/users/:id" [id] {:body {:name "foo" :id id :role "admin"}})
+  (GET "/randomizer" [min max] {:body {"randomNumber" (randomizer min max)}})
+  (route/not-found {:body {:error "Page not found"}}))
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(def api-app
+  (-&gt; api-routes
+    params/wrap-params
+    json/wrap-json-response))
+</pre>
+</div>
+</div>
 </div>
 </div>
 <div id="outline-container-sec-6" class="outline-2">
@@ -588,12 +597,6 @@ Middleware example:
 </div>
 </div>
 </div>
-</div>
-<div id="postamble" class="status">
-<p class="author">Author: Nils Blum-Oeste</p>
-<p class="date">Created: 2015-02-17 Di 19:11</p>
-<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.3.1 (<a href="http://orgmode.org">Org</a> mode 8.3beta)</p>
-<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
 </html>
