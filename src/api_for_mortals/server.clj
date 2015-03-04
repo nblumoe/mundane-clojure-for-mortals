@@ -1,7 +1,7 @@
 (ns api-for-mortals.server
-  (:require [clojure.edn :as edn]
-            [compojure.core :refer :all]
+  (:require [compojure.core :refer :all]
             [compojure.route :as route]
+            [clojure.edn :as edn]
             [ring.middleware.json :as json]
             [ring.middleware.params :as params]))
 
@@ -23,3 +23,12 @@
   (-> api-routes
     params/wrap-params
     json/wrap-json-response))
+
+(require '[api-for-mortals.swagger :as swagger])
+
+(def api-app
+  (let [old-routes (-> api-routes
+                     params/wrap-params
+                     json/wrap-json-response)
+        new-routes swagger/api]
+    (routes new-routes old-routes)))

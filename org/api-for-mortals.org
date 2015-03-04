@@ -214,6 +214,9 @@
        json/wrap-json-response))
    #+END_SRC
 * Always respond properly: Liberator
+  should I include Liberator?
+  or maybe just mention it?
+  I suspect it not to work (well) with swagger
 * Sweet APIs: Compojure-Swagger
   https://github.com/metosin/compojure-api#sample-minimalistic-swaggered-app
 
@@ -242,7 +245,18 @@
           (ok {:data body})))))
   #+END_SRC
 
-* Authentication and Authorization: <Friend?>
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
+   (require '[api-for-mortals.swagger :as swagger])
+
+   (def api-app
+     (let [old-routes (-> api-routes
+                        params/wrap-params
+                        json/wrap-json-response)
+           new-routes swagger/api]
+       (routes new-routes old-routes)))
+   #+END_SRC
+* Authentication and Authorization: Buddy
+  - stateless authentication
 * Connecting a database
 * Integrating other HTTP services
 * Deployment
@@ -271,3 +285,5 @@
       #+END_SRC
 
  - Adapters :: Adapters connect Ring to web servers like Jetty, http-kit, etc.
+** Frameworks / Boilerplates
+   - [[http://yogthos.net/posts/2015-02-28-Luminus-2.0.html][Luminus 2.0]]
