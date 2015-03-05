@@ -9,3 +9,4 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
+/org/api-for-mortals.org[*Org Src api-for-mortals.org[ clojure ]*]

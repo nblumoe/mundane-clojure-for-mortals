@@ -400,7 +400,93 @@
    <<auth-api>>
    #+END_SRC
 
-* Connecting a database
+* Datomic Database
+
+** Namespace outline
+
+   #+BEGIN_SRC clojure :noweb no-export :tangle ../src/api_for_mortals/datomic.clj
+   <<db-setup>>
+   <<db-init-and-seed>>
+   <<db-queries>>
+   #+END_SRC
+
+** Database setup
+   :PROPERTIES:
+   :noweb-ref: db-setup
+   :END:
+
+   Using a database will be shown with Datomic, an innovative database solution, close to the Clojure way of doing
+   things.
+
+   #+BEGIN_SRC clojure :noweb-ref project-dependencies
+  [com.datomic/datomic-free "0.9.5130"]
+   #+END_SRC
+
+   #+BEGIN_SRC clojure
+   (ns api-for-mortals.datomic
+     (:require [datomic.api :as d]))
+   #+END_SRC
+
+   We need to create the database and connect to it. We will use an in-memory database.
+
+   #+BEGIN_SRC clojure
+   (def uri "datomic:mem://jolts")
+
+   (d/create-database uri)
+
+   (def conn (d/connect uri))
+   #+END_SRC
+
+** Initialize DB and seed data
+   :PROPERTIES:
+   :noweb-ref: db-init-and-seed
+   :END:
+
+   We need a schema for our data.
+   #+BEGIN_SRC clojure
+   (def schema-tx [;; jolts
+                   {:db/id #db/id[:db.part/db]
+                    :db/ident :jolt/sender
+                    :db/valueType :db.type/string
+                    :db/cardinality :db.cardinality/one
+                    :db.install/_attribute :db.part/db}])
+   #+END_SRC
+
+   Submit the schema transaction
+
+   #+BEGIN_SRC clojure
+   @(d/transact conn schema-tx)
+   #+END_SRC
+
+   Define and submit seed data
+   #+BEGIN_SRC clojure
+   (def seed-tx [{:db/id #db/id[:db.part/user -1000001]
+                  :jolt/sender "nblu@futurice.com"}])
+
+   @(d/transact conn seed-tx)
+   #+END_SRC
+
+** Query database
+   :PROPERTIES:
+   :noweb-ref: db-queries
+   :END:
+
+   Get all jolts with a sender:
+   #+BEGIN_SRC clojure
+   (def results (q '[find ?j :where [?j :jolt/sender]] (db conn)))
+   #+END_SRC
+
+   Get id of first result and make it an entity map.
+   #+BEGIN_SRC clojure
+   (def id (ffirst results))
+   (def entity (-> conn db (d/entity id)))
+   #+END_SRC
+
+   Get the sender of the entity.
+   #+BEGIN_SRC clojure
+   (:jolt/sender entity)
+   #+END_SRC
+
 * Integrating other HTTP services
 * Deployment
 * Automated Testing

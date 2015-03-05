@@ -2,7 +2,7 @@
 <html>
 <head>
 <title>Mundane Clojure for Mortals: Let's build a Web API</title>
-<!-- 2015-03-05 Thu 10:35 -->
+<!-- 2015-03-05 Thu 18:40 -->
 <meta  charset="utf-8">
 <meta  name="generator" content="Org-mode">
 <meta  name="author" content="Nils Blum-Oeste">
@@ -172,7 +172,14 @@ for the JavaScript code in this tag.
 <li><a href="#sec-7-3">7.3. Complete file</a></li>
 </ul>
 </li>
-<li><a href="#sec-8">8. Connecting a database</a></li>
+<li><a href="#sec-8">8. Datomic Database</a>
+<ul>
+<li><a href="#sec-8-1">8.1. Namespace outline</a></li>
+<li><a href="#sec-8-2">8.2. Database setup</a></li>
+<li><a href="#sec-8-3">8.3. Initialize DB and seed data</a></li>
+<li><a href="#sec-8-4">8.4. Query database</a></li>
+</ul>
+</li>
 <li><a href="#sec-9">9. Integrating other HTTP services</a></li>
 <li><a href="#sec-10">10. Deployment</a></li>
 <li><a href="#sec-11">11. Automated Testing</a></li>
@@ -279,7 +286,8 @@ project's root directory. It should look a lot like this:
                  [compojure "1.3.1"]
                  [metosin/compojure-api "0.17.0"]
                  [metosin/ring-swagger-ui "2.1.1-M1"]
-                 [buddy "0.4.1"]]
+                 [buddy "0.4.1"]
+                 [com.datomic/datomic-free "0.9.5130"]]
   :plugins [[lein-ring "0.9.1"]]
   :ring {:handler api-for-mortals.server/api-app})
 </pre>
@@ -737,7 +745,10 @@ othwerise it returns an HTTP error.
       (GET* "/users/:id" {:as request}
         :middlewares [api-for-mortals.auth/auth-mw]
         :header-params [authorization :- String]
-        (ok (:identity request)))
+        :path-params [id :- Long]
+        (if (= (:id (:identity request)) id)
+          (ok (users id))
+          (ok {:error "not auth"})))
       auth-backend)
 
     (POST* "/login" []
@@ -763,9 +774,9 @@ othwerise it returns an HTTP error.
 (defapi api-app
   (swagger-ui)
   (swagger-docs)
-  comp/api
   (swaggered "No Authentication" swagger/api)
-  (swaggered "Authentication" auth/auth-api))
+  (swaggered "Authentication" auth/auth-api)
+  comp/api)
 </pre>
 </div>
 
@@ -823,7 +834,10 @@ further reading:
       (GET* "/users/:id" {:as request}
         :middlewares [api-for-mortals.auth/auth-mw]
         :header-params [authorization :- String]
-        (ok (:identity request)))
+        :path-params [id :- Long]
+        (if (= (:id (:identity request)) id)
+          (ok (users id))
+          (ok {:error "not auth"})))
       auth-backend)
 
     (POST* "/login" []
@@ -837,8 +851,133 @@ further reading:
 </div>
 
 <div id="outline-container-sec-8" class="outline-2">
-<h2 id="sec-8"><span class="section-number-2">8</span> Connecting a database</h2>
+<h2 id="sec-8"><span class="section-number-2">8</span> Datomic Database</h2>
+<div class="outline-text-2" id="text-8">
+</div><div id="outline-container-sec-8-1" class="outline-3">
+<h3 id="sec-8-1"><span class="section-number-3">8.1</span> Namespace outline</h3>
+<div class="outline-text-3" id="text-8-1">
+<div class="org-src-container">
+
+<pre class="src src-clojure">&lt;&lt;db-setup&gt;&gt;
+&lt;&lt;db-init-and-seed&gt;&gt;
+&lt;&lt;db-queries&gt;&gt;
+</pre>
 </div>
+</div>
+</div>
+
+<div id="outline-container-sec-8-2" class="outline-3">
+<h3 id="sec-8-2"><span class="section-number-3">8.2</span> Database setup</h3>
+<div class="outline-text-3" id="text-8-2">
+<p>
+Using a database will be shown with Datomic, an innovative database solution, close to the Clojure way of doing
+things.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">[com.datomic/datomic-free "0.9.5130"]
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(ns api-for-mortals.datomic
+  (:require [datomic.api :as d]))
+</pre>
+</div>
+
+<p>
+We need to create the database and connect to it. We will use an in-memory database.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(def uri "datomic:mem://jolts")
+
+(d/create-database uri)
+
+(def conn (d/connect uri))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-8-3" class="outline-3">
+<h3 id="sec-8-3"><span class="section-number-3">8.3</span> Initialize DB and seed data</h3>
+<div class="outline-text-3" id="text-8-3">
+<p>
+We need a schema for our data.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure">(def schema-tx [;; jolts
+                {:db/id #db/id[:db.part/db]
+                 :db/ident :jolt/sender
+                 :db/valueType :db.type/string
+                 :db/cardinality :db.cardinality/one
+                 :db.install/_attribute :db.part/db}])
+</pre>
+</div>
+
+<p>
+Submit the schema transaction
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">@(d/transact conn schema-tx)
+</pre>
+</div>
+
+<p>
+Define and submit seed data
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure">(def seed-tx [{:db/id #db/id[:db.part/user -1000001]
+               :jolt/sender "nblu@futurice.com"}])
+
+@(d/transact conn seed-tx)
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-8-4" class="outline-3">
+<h3 id="sec-8-4"><span class="section-number-3">8.4</span> Query database</h3>
+<div class="outline-text-3" id="text-8-4">
+<p>
+Get all jolts with a sender:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure">(def results (q '[find ?j :where [?j :jolt/sender]] (db conn)))
+</pre>
+</div>
+
+<p>
+Get id of first result and make it an entity map.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure">(def id (ffirst results))
+(def entity (-&gt; conn db (d/entity id)))
+</pre>
+</div>
+
+<p>
+Get the sender of the entity.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-clojure">(:jolt/sender entity)
+</pre>
+</div>
+</div>
+</div>
+</div>
+
 <div id="outline-container-sec-9" class="outline-2">
 <h2 id="sec-9"><span class="section-number-2">9</span> Integrating other HTTP services</h2>
 </div>
