@@ -62,13 +62,15 @@
    The central point for the declarative leiningen project configuration is =project.clj= which can be found in the
    project's root directory. It should look a lot like this:
 
-   #+BEGIN_SRC clojure
-   (defproject api-for-mortals "0.1.0-SNAPSHOT"
-     :description "FIXME: write description"
-     :url "http://example.com/FIXME"
-     :license {:name "Eclipse Public License"
-               :url "http://www.eclipse.org/legal/epl-v10.html"}
-     :dependencies [[org.clojure/clojure "1.6.0"]])
+   #+BEGIN_SRC clojure :tangle ../project.clj :noweb yes
+         (defproject api-for-mortals "0.1.0-SNAPSHOT"
+           :description "FIXME: write description"
+           :url "http://example.com/FIXME"
+           :license {:name "Eclipse Public License"
+                     :url "http://www.eclipse.org/legal/epl-v10.html"}
+           :dependencies [[org.clojure/clojure "1.6.0"]
+                          <<project-dependencies>>]
+           <<project-ring>>)
    #+END_SRC
 
    This defines your project. The first two parameters to =defproject=  are the project name and the version,
@@ -81,12 +83,10 @@
   [[https://github.com/ring-clojure/ring][Ring]] is a Clojure library to handle HTTP requests with similarities from Python's WSGI and Ruby's Rack. Ring is
   another de-factor standard in the Clojure world. Many other libraries build on top of Ring.
 
-  To use it in our project, we need to add it as a dependency in =project.clj=. Make your dependecies list look like
-  this:
-  #+BEGIN_SRC clojure
-  :dependencies [[org.clojure/clojure "1.6.0"]
-                 [ring/ring-core "1.3.2"]
-                 [ring/ring-jetty-adapter "1.3.2"]]
+  To use it in our project, we need to add it as a dependency in =project.clj=. Add these two vectors to the depenencies:
+  #+BEGIN_SRC clojure :noweb-ref project-dependencies
+  [ring/ring-core "1.3.2"]
+  [ring/ring-jetty-adapter "1.3.2"]
   #+END_SRC
 
   We added the core ring module and the HTTP server http-kit.
@@ -118,8 +118,12 @@
 
    We can make using Ring a bit more comfortable by using the Lein-Ring plugin. Add this map to =project.clj=:
 
-   #+BEGIN_SRC clojure
+   #+BEGIN_SRC clojure :noweb-ref project-ring
    :plugins [[lein-ring "0.9.1"]]
+   #+END_SRC
+
+   The entry point for ring gets defined like this:
+   #+BEGIN_SRC clojure
    :ring {:handler api-for-mortals.core/hello-handler}
    #+END_SRC
 
@@ -128,7 +132,7 @@
 
 * Better responses: Ring middlewares
 
-  #+BEGIN_SRC clojure
+  #+BEGIN_SRC clojure :noweb-ref project-dependencies
   [ring/ring-json "0.3.1"]
   #+END_SRC
 
@@ -156,21 +160,25 @@
 
    To use it, simply add the dependecy to =project.clj=:
 
-   #+BEGIN_SRC clojure
+   #+BEGIN_SRC clojure :noweb-ref project-dependencies
    [compojure "1.3.1"]
    #+END_SRC
 
 ** Namespace setup
+   :PROPERTIES:
+   :noweb-ref: api-app
+   :END:
 
    Setup a new file and namespace for the compojure handlers:
 
-   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
-      (ns api-for-mortals.server
-        (:require [compojure.core :refer :all]
-                  [compojure.route :as route]
-                  [clojure.edn :as edn]
-                  [ring.middleware.json :as json]
-                  [ring.middleware.params :as params]))
+   #+BEGIN_SRC clojure
+   (ns api-for-mortals.server
+     (:require [compojure.core :refer :all]
+               [compojure.route :as route]
+               [clojure.edn :as edn]
+               [ring.middleware.json :as json]
+               [ring.middleware.params :as params]))
+
    #+END_SRC
 
    - compojure :: =compojure.core= has the main functions we need to define routes with compojure and =compojure.route=
@@ -184,10 +192,12 @@
    - ring.middleware :: =ring.middleware.json= we already know, we use it to build proper JSON responses. =ring.middleware.params= is used to
         extract parameters from the request's query string.
 
-
 ** Some functions to produce "meaningful" output
+   :PROPERTIES:
+   :noweb-ref: api-app
+   :END:
 
-   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
+   #+BEGIN_SRC clojure
    (defn rnd-int-in-range [min max]
      (+ min (rand-int (+ (- max min) 1))))
 
@@ -195,24 +205,43 @@
      (let [min (edn/read-string min-str)
            max (edn/read-string max-str)]
        (rnd-int-in-range min max)))
+
    #+END_SRC
 
 ** Defining routes and their handlers
+   :PROPERTIES:
+   :noweb-ref: api-app
+   :END:
 
-   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
+   A small collection of routes.
+   #+BEGIN_SRC clojure
    (defroutes api-routes
      (GET "/bounce-request" request {:body (dissoc request :body)})
      (GET "/users/:id" [id] {:body {:name "foo" :id id :role "admin"}})
      (GET "/randomizer" [min max] {:body {"randomNumber" (randomizer min max)}})
      (route/not-found {:body {:error "Page not found"}}))
+
    #+END_SRC
 
-   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
+   Wrapping the routes with ring middlewares to get parameters from requests and produce JSON output in the responses.
+   #+BEGIN_SRC clojure
    (def api-app
      (-> api-routes
        params/wrap-params
        json/wrap-json-response))
+
    #+END_SRC
+
+   Update the entry point for the ring server in =project.clj=  to use our new, improved handler:
+   #+BEGIN_SRC clojure :noweb-ref project-ring
+   :ring {:handler api-for-mortals.server/api-app}
+   #+END_SRC
+
+** Complete namespace
+   #+BEGIN_SRC clojure :noweb yes :tangle ../src/api_for_mortals/server.clj
+   <<api-app>>
+   #+END_SRC
+
 * Always respond properly: Liberator
   should I include Liberator?
   or maybe just mention it?
@@ -221,7 +250,7 @@
   https://github.com/metosin/compojure-api#sample-minimalistic-swaggered-app
 
   Add the dependencies for the API library and the API testing UI to =project.clj=:
-  #+BEGIN_SRC clojure
+  #+BEGIN_SRC clojure :noweb-ref project-dependencies
   [metosin/compojure-api "0.17.0"]
   [metosin/ring-swagger-ui "2.1.1-M1"]
   #+END_SRC
@@ -256,7 +285,88 @@
        (routes new-routes old-routes)))
    #+END_SRC
 * Authentication and Authorization: Buddy
-  - stateless authentication
+  Buddy is a small set of libraries for authentication and authorization including the needed cryptography, hashing and
+  message signing. If needed these libs can be used independently.
+
+  Add dependency for 'buddy' meta package, including all these libraries:
+
+  #+BEGIN_SRC clojure :noweb-ref project-dependencies
+  [buddy "0.4.1"]
+  #+END_SRC
+
+  Buddy supports multiple auth mechanisms, including HTTP basic auth, sessions and tokens, as well as stateless
+  authentication. We are going to use the latter one.
+
+** Stateless authentication
+
+   Buddy's stateless authentication is based on JSON Web Signatures (JSW).
+
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/auth.clj
+   (ns api-for-mortals.auth
+     (:require [buddy.sign.jws :as jws]
+               [buddy.auth :refer [authenticated?]]
+               [buddy.auth.middleware :refer [wrap-authentication]]
+               [buddy.auth.backends.token :refer [jws-backend]]
+               [ring.util.http-response :refer [ok unauthorized]]
+               [compojure.api.sweet :refer :all]))
+
+   (def secret "abc123")
+
+   (def user {:id 3
+              :username "foo"
+              :password "bar"})
+
+   (def users {(:id user) user})
+
+   (defn login [username password]
+     (if (and (= username (:username user))
+           (= password (:password user)))
+       {:token (jws/sign {:id (:id user)} secret)}
+       nil))
+
+   (def auth-backend (jws-backend {:secret secret}))
+
+   (defn auth-mw [handler]
+     (fn [request]
+       (if (authenticated? request)
+         (handler request)
+         (unauthorized {:error "Invalid Token"}))))
+
+   (defapi auth-api
+     (swagger-docs "/auth-api/api-docs")
+     (swaggered "users"
+       :description "An API with auth"
+       (context "/auth-api" []
+
+         (wrap-authentication
+           (GET* "/users/:id" {:as request}
+             :middlewares [auth-mw]
+             :header-params [authorization :- String]
+             (ok (:identity request)))
+           auth-backend)
+
+         (POST* "/login" []
+           :body-params [username :- String
+                         password :- String]
+           (ok (login username password))))))
+   #+END_SRC
+
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
+   (require '[api-for-mortals.auth :as auth])
+
+   (def api-app
+     (let [old-routes (-> api-routes
+                        params/wrap-params
+                        json/wrap-json-response)
+           new-routes swagger/api
+           auth-routes auth/auth-api]
+       (routes  auth-routes new-routes old-routes)))
+   #+END_SRC
+
+  further reading:
+  - [[http://lucumr.pocoo.org/2013/11/17/my-favorite-database/][Armin Ronacher: My favorite database]]
+  - [[http://www.niwi.be/2014/06/07/stateless-authentication-with-api-rest/][Andrey Antukh: Stateless authentication with API REST]]
+
 * Connecting a database
 * Integrating other HTTP services
 * Deployment

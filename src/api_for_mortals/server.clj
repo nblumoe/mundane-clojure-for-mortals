@@ -32,3 +32,13 @@
                      json/wrap-json-response)
         new-routes swagger/api]
     (routes new-routes old-routes)))
+
+(require '[api-for-mortals.auth :as auth])
+
+(def api-app
+  (let [old-routes (-> api-routes
+                     params/wrap-params
+                     json/wrap-json-response)
+        new-routes swagger/api
+        auth-routes auth/auth-api]
+    (routes  auth-routes new-routes old-routes)))
