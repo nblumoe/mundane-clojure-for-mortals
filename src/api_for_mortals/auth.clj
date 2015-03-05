@@ -33,7 +33,10 @@
       (GET* "/users/:id" {:as request}
         :middlewares [api-for-mortals.auth/auth-mw]
         :header-params [authorization :- String]
-        (ok (:identity request)))
+        :path-params [id :- Long]
+        (if (= (:id (:identity request)) id)
+          (ok (users id))
+          (ok {:error "not auth"})))
       auth-backend)
 
     (POST* "/login" []

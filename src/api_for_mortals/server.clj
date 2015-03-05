@@ -7,6 +7,6 @@
 (defapi api-app
   (swagger-ui)
   (swagger-docs)
-  comp/api
   (swaggered "No Authentication" swagger/api)
-  (swaggered "Authentication" auth/auth-api))
+  (swaggered "Authentication" auth/auth-api)
+  comp/api)

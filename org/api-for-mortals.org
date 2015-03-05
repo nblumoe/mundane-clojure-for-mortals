@@ -360,7 +360,10 @@
           (GET* "/users/:id" {:as request}
             :middlewares [api-for-mortals.auth/auth-mw]
             :header-params [authorization :- String]
-            (ok (:identity request)))
+            :path-params [id :- Long]
+            (if (= (:id (:identity request)) id)
+              (ok (users id))
+              (ok {:error "not auth"})))
           auth-backend)
 
         (POST* "/login" []
@@ -381,9 +384,9 @@
    (defapi api-app
      (swagger-ui)
      (swagger-docs)
-     comp/api
      (swaggered "No Authentication" swagger/api)
-     (swaggered "Authentication" auth/auth-api))
+     (swaggered "Authentication" auth/auth-api)
+     comp/api)
    #+END_SRC
 
    #+BEGIN_SRC clojure :noweb-ref project-ring
