@@ -57,20 +57,20 @@
    This will create a new project in a subdirectory called =api-for-mortals=. The project name is also used for the
    Clojure namespaces being created.
 
-** Adding some basic dependencies
+** Basic project setup
 
    The central point for the declarative leiningen project configuration is =project.clj= which can be found in the
    project's root directory. It should look a lot like this:
 
    #+BEGIN_SRC clojure :tangle ../project.clj :noweb yes
-         (defproject api-for-mortals "0.1.0-SNAPSHOT"
-           :description "FIXME: write description"
-           :url "http://example.com/FIXME"
-           :license {:name "Eclipse Public License"
-                     :url "http://www.eclipse.org/legal/epl-v10.html"}
-           :dependencies [[org.clojure/clojure "1.6.0"]
-                          <<project-dependencies>>]
-           <<project-ring>>)
+   (defproject api-for-mortals "0.1.0-SNAPSHOT"
+     :description "FIXME: write description"
+     :url "http://example.com/FIXME"
+     :license {:name "Eclipse Public License"
+               :url "http://www.eclipse.org/legal/epl-v10.html"}
+     :dependencies [[org.clojure/clojure "1.6.0"]
+                    <<project-dependencies>>]
+     <<project-ring>>)
    #+END_SRC
 
    This defines your project. The first two parameters to =defproject=  are the project name and the version,
@@ -101,8 +101,8 @@
 
    Let's write our first handler in =src/api_for_mortals/core.clj=:
 
-   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/core.clj
-   (ns api-for-mortals.core)
+   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/simple.clj
+   (ns api-for-mortals.simple)
 
    (defn hello-handler [request]
      {:status 200
@@ -124,7 +124,7 @@
 
    The entry point for ring gets defined like this:
    #+BEGIN_SRC clojure
-   :ring {:handler api-for-mortals.core/hello-handler}
+   :ring {:handler api-for-mortals.simple/hello-handler}
    #+END_SRC
 
    Now run =lein ring server= in the project root directory to start your web application. Head over to
@@ -138,7 +138,7 @@
 
   Creating a new handler which returns the request map as json data:
 
-  #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/core.clj
+  #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/simple.clj
   (require '[ring.middleware.json :as json])
   (def hello-json-handler
     (json/wrap-json-response
@@ -150,7 +150,7 @@
   Let's also update the ring config to use the new handler when running =lein ring server=:
 
   #+BEGIN_SRC clojure
-  :ring {:handler api-for-mortals.core/hello-json-handler}
+  :ring {:handler api-for-mortals.simple/hello-json-handler}
   #+END_SRC
 
 * Convenient routing with Compojure
@@ -172,7 +172,7 @@
    Setup a new file and namespace for the compojure handlers:
 
    #+BEGIN_SRC clojure
-   (ns api-for-mortals.server
+   (ns api-for-mortals.compojure
      (:require [compojure.core :refer :all]
                [compojure.route :as route]
                [clojure.edn :as edn]
@@ -225,27 +225,25 @@
 
    Wrapping the routes with ring middlewares to get parameters from requests and produce JSON output in the responses.
    #+BEGIN_SRC clojure
-   (def api-app
+   (def api
      (-> api-routes
        params/wrap-params
        json/wrap-json-response))
 
    #+END_SRC
 
-   Update the entry point for the ring server in =project.clj=  to use our new, improved handler:
-   #+BEGIN_SRC clojure :noweb-ref project-ring
-   :ring {:handler api-for-mortals.server/api-app}
-   #+END_SRC
-
 ** Complete namespace
-   #+BEGIN_SRC clojure :noweb yes :tangle ../src/api_for_mortals/server.clj
+   #+BEGIN_SRC clojure :noweb yes :tangle ../src/api_for_mortals/compojure.clj
    <<api-app>>
    #+END_SRC
 
-* Always respond properly: Liberator
-  should I include Liberator?
-  or maybe just mention it?
-  I suspect it not to work (well) with swagger
+** Update ring entry point
+
+   Update the entry point for the ring server in =project.clj=  to use our new, improved handler:
+
+   #+BEGIN_SRC clojure
+   :ring {:handler api-for-mortals.compojure/api-app}
+   #+END_SRC
 * Sweet APIs: Compojure-Swagger
   https://github.com/metosin/compojure-api#sample-minimalistic-swaggered-app
 
@@ -261,20 +259,16 @@
     (:require [ring.util.http-response :refer [ok]]
               [compojure.api.sweet :refer :all]))
 
-  (defapi api
-    (swagger-ui)
-    (swagger-docs)
-    (swaggered "jolts"
-      :description "My awesome Jolt API"
-      (context "/api" []
-        (GET* "/jolts/:id" [id]
-          (ok {:id id}))
-        (POST* "/jolts" []
-          :body-params [body :- Long]
-          (ok {:data body})))))
+  (defroutes* api
+    (context "/api" []
+      (GET* "/jolts/:id" [id]
+        (ok {:id id}))
+      (POST* "/jolts" []
+        :body-params [body :- Long]
+        (ok {:data body}))))
   #+END_SRC
 
-   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
+   #+BEGIN_SRC clojure
    (require '[api-for-mortals.swagger :as swagger])
 
    (def api-app
@@ -298,10 +292,13 @@
   authentication. We are going to use the latter one.
 
 ** Stateless authentication
+   :PROPERTIES:
+   :noweb-ref: auth-api
+   :END:
 
    Buddy's stateless authentication is based on JSON Web Signatures (JSW).
 
-   #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/auth.clj
+   #+BEGIN_SRC clojure
    (ns api-for-mortals.auth
      (:require [buddy.sign.jws :as jws]
                [buddy.auth :refer [authenticated?]]
@@ -310,6 +307,11 @@
                [ring.util.http-response :refer [ok unauthorized]]
                [compojure.api.sweet :refer :all]))
 
+    #+END_SRC
+
+   Some dummy data to work with.
+
+   #+BEGIN_SRC clojure
    (def secret "abc123")
 
    (def user {:id 3
@@ -318,54 +320,82 @@
 
    (def users {(:id user) user})
 
+   #+END_SRC
+
+   When submitting valid credentials to the login endpoint, the user receives a token with his encrypted id.
+
+   #+BEGIN_SRC clojure
    (defn login [username password]
      (if (and (= username (:username user))
            (= password (:password user)))
        {:token (jws/sign {:id (:id user)} secret)}
        nil))
 
-   (def auth-backend (jws-backend {:secret secret}))
+   #+END_SRC
 
+   The =auth-backend= checks the request data for an authorization header and tries to decode it. If successful, it
+   writes the decoded data to the key =:identity= in the =request= map.
+
+   #+BEGIN_SRC clojure
+   (def auth-backend (jws-backend {:secret secret}))
+    #+END_SRC
+
+   A very simple middleware to check if the user is authenticated. For authenticated users is calls the given handler,
+   othwerise it returns an HTTP error.
+   =authenticated?= checks for an existing (non-nil) value of =:identity= in the =request= map (see =auth-backend= above).
+
+    #+BEGIN_SRC clojure
    (defn auth-mw [handler]
      (fn [request]
        (if (authenticated? request)
          (handler request)
          (unauthorized {:error "Invalid Token"}))))
+    #+END_SRC
 
-   (defapi auth-api
-     (swagger-docs "/auth-api/api-docs")
-     (swaggered "users"
-       :description "An API with auth"
-       (context "/auth-api" []
+    #+BEGIN_SRC clojure
+    (defroutes* auth-api
+      (context "/auth-api" []
 
-         (wrap-authentication
-           (GET* "/users/:id" {:as request}
-             :middlewares [auth-mw]
-             :header-params [authorization :- String]
-             (ok (:identity request)))
-           auth-backend)
+        (wrap-authentication
+          (GET* "/users/:id" {:as request}
+            :middlewares [api-for-mortals.auth/auth-mw]
+            :header-params [authorization :- String]
+            (ok (:identity request)))
+          auth-backend)
 
-         (POST* "/login" []
-           :body-params [username :- String
-                         password :- String]
-           (ok (login username password))))))
+        (POST* "/login" []
+          :body-params [username :- String
+                        password :- String]
+          (ok (login username password)))))
    #+END_SRC
+
+** Updated ring entry point
 
    #+BEGIN_SRC clojure :tangle ../src/api_for_mortals/server.clj
-   (require '[api-for-mortals.auth :as auth])
+   (ns api-for-mortals.server
+     (:require [compojure.api.sweet :refer :all]
+               [api-for-mortals.compojure :as comp]
+               [api-for-mortals.swagger :as swagger]
+               [api-for-mortals.auth :as auth]))
 
-   (def api-app
-     (let [old-routes (-> api-routes
-                        params/wrap-params
-                        json/wrap-json-response)
-           new-routes swagger/api
-           auth-routes auth/auth-api]
-       (routes  auth-routes new-routes old-routes)))
+   (defapi api-app
+     (swagger-ui)
+     (swagger-docs)
+     comp/api
+     (swaggered "No Authentication" swagger/api)
+     (swaggered "Authentication" auth/auth-api))
    #+END_SRC
 
+   #+BEGIN_SRC clojure :noweb-ref project-ring
+   :ring {:handler api-for-mortals.server/api-app}
+   #+END_SRC
   further reading:
   - [[http://lucumr.pocoo.org/2013/11/17/my-favorite-database/][Armin Ronacher: My favorite database]]
   - [[http://www.niwi.be/2014/06/07/stateless-authentication-with-api-rest/][Andrey Antukh: Stateless authentication with API REST]]
+** Complete file
+   #+BEGIN_SRC clojure :noweb yes :tangle ../src/api_for_mortals/auth.clj
+   <<auth-api>>
+   #+END_SRC
 
 * Connecting a database
 * Integrating other HTTP services
@@ -397,3 +427,8 @@
  - Adapters :: Adapters connect Ring to web servers like Jetty, http-kit, etc.
 ** Frameworks / Boilerplates
    - [[http://yogthos.net/posts/2015-02-28-Luminus-2.0.html][Luminus 2.0]]
+
+* Always respond properly: Liberator
+  should I include Liberator?
+  or maybe just mention it?
+  I suspect it not to work (well) with swagger

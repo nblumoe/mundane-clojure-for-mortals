@@ -21,27 +21,22 @@
     nil))
 
 (def auth-backend (jws-backend {:secret secret}))
-
 (defn auth-mw [handler]
   (fn [request]
     (if (authenticated? request)
       (handler request)
       (unauthorized {:error "Invalid Token"}))))
+(defroutes* auth-api
+  (context "/auth-api" []
 
-(defapi auth-api
-  (swagger-docs "/auth-api/api-docs")
-  (swaggered "users"
-    :description "An API with auth"
-    (context "/auth-api" []
+    (wrap-authentication
+      (GET* "/users/:id" {:as request}
+        :middlewares [api-for-mortals.auth/auth-mw]
+        :header-params [authorization :- String]
+        (ok (:identity request)))
+      auth-backend)
 
-      (wrap-authentication
-        (GET* "/users/:id" {:as request}
-          :middlewares [auth-mw]
-          :header-params [authorization :- String]
-          (ok (:identity request)))
-        auth-backend)
-
-      (POST* "/login" []
-        :body-params [username :- String
-                      password :- String]
-        (ok (login username password))))))
+    (POST* "/login" []
+      :body-params [username :- String
+                    password :- String]
+      (ok (login username password)))))

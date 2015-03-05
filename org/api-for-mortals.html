@@ -2,7 +2,7 @@
 <html>
 <head>
 <title>Mundane Clojure for Mortals: Let's build a Web API</title>
-<!-- 2015-03-05 Thu 08:06 -->
+<!-- 2015-03-05 Thu 10:35 -->
 <meta  charset="utf-8">
 <meta  name="generator" content="Org-mode">
 <meta  name="author" content="Nils Blum-Oeste">
@@ -145,7 +145,7 @@ for the JavaScript code in this tag.
 <ul>
 <li><a href="#sec-2-1">2.1. Project automation and dependecy Management with Leiningen</a></li>
 <li><a href="#sec-2-2">2.2. Create your new project</a></li>
-<li><a href="#sec-2-3">2.3. Adding some basic dependencies</a></li>
+<li><a href="#sec-2-3">2.3. Basic project setup</a></li>
 </ul>
 </li>
 <li><a href="#sec-3">3. HTTP handling: One Ring to rule them all!</a>
@@ -161,25 +161,28 @@ for the JavaScript code in this tag.
 <li><a href="#sec-5-2">5.2. Some functions to produce "meaningful" output</a></li>
 <li><a href="#sec-5-3">5.3. Defining routes and their handlers</a></li>
 <li><a href="#sec-5-4">5.4. Complete namespace</a></li>
+<li><a href="#sec-5-5">5.5. Update ring entry point</a></li>
 </ul>
 </li>
-<li><a href="#sec-6">6. Always respond properly: Liberator</a></li>
-<li><a href="#sec-7">7. Sweet APIs: Compojure-Swagger</a></li>
-<li><a href="#sec-8">8. Authentication and Authorization: Buddy</a>
+<li><a href="#sec-6">6. Sweet APIs: Compojure-Swagger</a></li>
+<li><a href="#sec-7">7. Authentication and Authorization: Buddy</a>
 <ul>
-<li><a href="#sec-8-1">8.1. Stateless authentication</a></li>
+<li><a href="#sec-7-1">7.1. Stateless authentication</a></li>
+<li><a href="#sec-7-2">7.2. Updated ring entry point</a></li>
+<li><a href="#sec-7-3">7.3. Complete file</a></li>
 </ul>
 </li>
-<li><a href="#sec-9">9. Connecting a database</a></li>
-<li><a href="#sec-10">10. Integrating other HTTP services</a></li>
-<li><a href="#sec-11">11. Deployment</a></li>
-<li><a href="#sec-12">12. Automated Testing</a></li>
-<li><a href="#sec-13">13. Appendix</a>
+<li><a href="#sec-8">8. Connecting a database</a></li>
+<li><a href="#sec-9">9. Integrating other HTTP services</a></li>
+<li><a href="#sec-10">10. Deployment</a></li>
+<li><a href="#sec-11">11. Automated Testing</a></li>
+<li><a href="#sec-12">12. Appendix</a>
 <ul>
-<li><a href="#sec-13-1">13.1. Important Ring Concepts</a></li>
-<li><a href="#sec-13-2">13.2. Frameworks / Boilerplates</a></li>
+<li><a href="#sec-12-1">12.1. Important Ring Concepts</a></li>
+<li><a href="#sec-12-2">12.2. Frameworks / Boilerplates</a></li>
 </ul>
 </li>
+<li><a href="#sec-13">13. Always respond properly: Liberator</a></li>
 </ul>
 </div>
 </nav>
@@ -255,7 +258,7 @@ Clojure namespaces being created.
 </div>
 
 <div id="outline-container-sec-2-3" class="outline-3">
-<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Adding some basic dependencies</h3>
+<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Basic project setup</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 The central point for the declarative leiningen project configuration is <code>project.clj</code> which can be found in the
@@ -334,7 +337,7 @@ Let's write our first handler in <code>src/api_for_mortals/core.clj</code>:
 
 <div class="org-src-container">
 
-<pre class="src src-clojure">(ns api-for-mortals.core)
+<pre class="src src-clojure">(ns api-for-mortals.simple)
 
 (defn hello-handler [request]
   {:status 200
@@ -369,7 +372,7 @@ The entry point for ring gets defined like this:
 </p>
 <div class="org-src-container">
 
-<pre class="src src-clojure">:ring {:handler api-for-mortals.core/hello-handler}
+<pre class="src src-clojure">:ring {:handler api-for-mortals.simple/hello-handler}
 </pre>
 </div>
 
@@ -413,7 +416,7 @@ Let's also update the ring config to use the new handler when running <code>lein
 
 <div class="org-src-container">
 
-<pre class="src src-clojure">:ring {:handler api-for-mortals.core/hello-json-handler}
+<pre class="src src-clojure">:ring {:handler api-for-mortals.simple/hello-json-handler}
 </pre>
 </div>
 </div>
@@ -452,7 +455,7 @@ Setup a new file and namespace for the compojure handlers:
 
 <div class="org-src-container">
 
-<pre class="src src-clojure">(ns api-for-mortals.server
+<pre class="src src-clojure">(ns api-for-mortals.compojure
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
             [clojure.edn :as edn]
@@ -518,19 +521,10 @@ Wrapping the routes with ring middlewares to get parameters from requests and pr
 </p>
 <div class="org-src-container">
 
-<pre class="src src-clojure">(def api-app
+<pre class="src src-clojure">(def api
   (-&gt; api-routes
     params/wrap-params
     json/wrap-json-response))
-</pre>
-</div>
-
-<p>
-Update the entry point for the ring server in <code>project.clj</code>  to use our new, improved handler:
-</p>
-<div class="org-src-container">
-
-<pre class="src src-clojure">:ring {:handler api-for-mortals.server/api-app}
 </pre>
 </div>
 </div>
@@ -541,7 +535,7 @@ Update the entry point for the ring server in <code>project.clj</code>  to use o
 <div class="outline-text-3" id="text-5-4">
 <div class="org-src-container">
 
-<pre class="src src-clojure">(ns api-for-mortals.server
+<pre class="src src-clojure">(ns api-for-mortals.compojure
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
             [clojure.edn :as edn]
@@ -562,7 +556,7 @@ Update the entry point for the ring server in <code>project.clj</code>  to use o
   (GET "/randomizer" [min max] {:body {"randomNumber" (randomizer min max)}})
   (route/not-found {:body {:error "Page not found"}}))
 
-(def api-app
+(def api
   (-&gt; api-routes
     params/wrap-params
     json/wrap-json-response))
@@ -570,21 +564,25 @@ Update the entry point for the ring server in <code>project.clj</code>  to use o
 </div>
 </div>
 </div>
-</div>
 
-<div id="outline-container-sec-6" class="outline-2">
-<h2 id="sec-6"><span class="section-number-2">6</span> Always respond properly: Liberator</h2>
-<div class="outline-text-2" id="text-6">
+<div id="outline-container-sec-5-5" class="outline-3">
+<h3 id="sec-5-5"><span class="section-number-3">5.5</span> Update ring entry point</h3>
+<div class="outline-text-3" id="text-5-5">
 <p>
-should I include Liberator?
-or maybe just mention it?
-I suspect it not to work (well) with swagger
+Update the entry point for the ring server in <code>project.clj</code>  to use our new, improved handler:
 </p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">:ring {:handler api-for-mortals.compojure/api-app}
+</pre>
 </div>
 </div>
-<div id="outline-container-sec-7" class="outline-2">
-<h2 id="sec-7"><span class="section-number-2">7</span> Sweet APIs: Compojure-Swagger</h2>
-<div class="outline-text-2" id="text-7">
+</div>
+</div>
+<div id="outline-container-sec-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> Sweet APIs: Compojure-Swagger</h2>
+<div class="outline-text-2" id="text-6">
 <p>
 <a href="https://github.com/metosin/compojure-api#sample-minimalistic-swaggered-app">https://github.com/metosin/compojure-api#sample-minimalistic-swaggered-app</a>
 </p>
@@ -606,17 +604,13 @@ Add the dependencies for the API library and the API testing UI to <code>project
   (:require [ring.util.http-response :refer [ok]]
             [compojure.api.sweet :refer :all]))
 
-(defapi api
-  (swagger-ui)
-  (swagger-docs)
-  (swaggered "jolts"
-    :description "My awesome Jolt API"
-    (context "/api" []
-      (GET* "/jolts/:id" [id]
-        (ok {:id id}))
-      (POST* "/jolts" []
-        :body-params [body :- Long]
-        (ok {:data body})))))
+(defroutes* api
+  (context "/api" []
+    (GET* "/jolts/:id" [id]
+      (ok {:id id}))
+    (POST* "/jolts" []
+      :body-params [body :- Long]
+      (ok {:data body}))))
 </pre>
 </div>
 
@@ -634,9 +628,9 @@ Add the dependencies for the API library and the API testing UI to <code>project
 </div>
 </div>
 </div>
-<div id="outline-container-sec-8" class="outline-2">
-<h2 id="sec-8"><span class="section-number-2">8</span> Authentication and Authorization: Buddy</h2>
-<div class="outline-text-2" id="text-8">
+<div id="outline-container-sec-7" class="outline-2">
+<h2 id="sec-7"><span class="section-number-2">7</span> Authentication and Authorization: Buddy</h2>
+<div class="outline-text-2" id="text-7">
 <p>
 Buddy is a small set of libraries for authentication and authorization including the needed cryptography, hashing and
 message signing. If needed these libs can be used independently.
@@ -658,13 +652,140 @@ authentication. We are going to use the latter one.
 </p>
 </div>
 
-<div id="outline-container-sec-8-1" class="outline-3">
-<h3 id="sec-8-1"><span class="section-number-3">8.1</span> Stateless authentication</h3>
-<div class="outline-text-3" id="text-8-1">
+<div id="outline-container-sec-7-1" class="outline-3">
+<h3 id="sec-7-1"><span class="section-number-3">7.1</span> Stateless authentication</h3>
+<div class="outline-text-3" id="text-7-1">
 <p>
 Buddy's stateless authentication is based on JSON Web Signatures (JSW).
 </p>
 
+<div class="org-src-container">
+
+<pre class="src src-clojure">(ns api-for-mortals.auth
+  (:require [buddy.sign.jws :as jws]
+            [buddy.auth :refer [authenticated?]]
+            [buddy.auth.middleware :refer [wrap-authentication]]
+            [buddy.auth.backends.token :refer [jws-backend]]
+            [ring.util.http-response :refer [ok unauthorized]]
+            [compojure.api.sweet :refer :all]))
+</pre>
+</div>
+
+<p>
+Some dummy data to work with.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(def secret "abc123")
+
+(def user {:id 3
+           :username "foo"
+           :password "bar"})
+
+(def users {(:id user) user})
+</pre>
+</div>
+
+<p>
+When submitting valid credentials to the login endpoint, the user receives a token with his encrypted id.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(defn login [username password]
+  (if (and (= username (:username user))
+        (= password (:password user)))
+    {:token (jws/sign {:id (:id user)} secret)}
+    nil))
+</pre>
+</div>
+
+<p>
+The <code>auth-backend</code> checks the request data for an authorization header and tries to decode it. If successful, it
+writes the decoded data to the key <code>:identity</code> in the <code>request</code> map.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(def auth-backend (jws-backend {:secret secret}))
+</pre>
+</div>
+
+<p>
+A very simple middleware to check if the user is authenticated. For authenticated users is calls the given handler,
+othwerise it returns an HTTP error.
+<code>authenticated?</code> checks for an existing (non-nil) value of <code>:identity</code> in the <code>request</code> map (see <code>auth-backend</code> above).
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(defn auth-mw [handler]
+  (fn [request]
+    (if (authenticated? request)
+      (handler request)
+      (unauthorized {:error "Invalid Token"}))))
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">(defroutes* auth-api
+  (context "/auth-api" []
+
+    (wrap-authentication
+      (GET* "/users/:id" {:as request}
+        :middlewares [api-for-mortals.auth/auth-mw]
+        :header-params [authorization :- String]
+        (ok (:identity request)))
+      auth-backend)
+
+    (POST* "/login" []
+      :body-params [username :- String
+                    password :- String]
+      (ok (login username password)))))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-7-2" class="outline-3">
+<h3 id="sec-7-2"><span class="section-number-3">7.2</span> Updated ring entry point</h3>
+<div class="outline-text-3" id="text-7-2">
+<div class="org-src-container">
+
+<pre class="src src-clojure">(ns api-for-mortals.server
+  (:require [compojure.api.sweet :refer :all]
+            [api-for-mortals.compojure :as comp]
+            [api-for-mortals.swagger :as swagger]
+            [api-for-mortals.auth :as auth]))
+
+(defapi api-app
+  (swagger-ui)
+  (swagger-docs)
+  comp/api
+  (swaggered "No Authentication" swagger/api)
+  (swaggered "Authentication" auth/auth-api))
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-clojure">:ring {:handler api-for-mortals.server/api-app}
+</pre>
+</div>
+<p>
+further reading:
+</p>
+<ul class="org-ul">
+<li><a href="http://lucumr.pocoo.org/2013/11/17/my-favorite-database/">Armin Ronacher: My favorite database</a></li>
+<li><a href="http://www.niwi.be/2014/06/07/stateless-authentication-with-api-rest/">Andrey Antukh: Stateless authentication with API REST</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-sec-7-3" class="outline-3">
+<h3 id="sec-7-3"><span class="section-number-3">7.3</span> Complete file</h3>
+<div class="outline-text-3" id="text-7-3">
 <div class="org-src-container">
 
 <pre class="src src-clojure">(ns api-for-mortals.auth
@@ -690,76 +811,49 @@ Buddy's stateless authentication is based on JSON Web Signatures (JSW).
     nil))
 
 (def auth-backend (jws-backend {:secret secret}))
-
 (defn auth-mw [handler]
   (fn [request]
     (if (authenticated? request)
       (handler request)
       (unauthorized {:error "Invalid Token"}))))
+(defroutes* auth-api
+  (context "/auth-api" []
 
-(defapi auth-api
-  (swagger-docs "/auth-api/api-docs")
-  (swaggered "users"
-    :description "An API with auth"
-    (context "/auth-api" []
+    (wrap-authentication
+      (GET* "/users/:id" {:as request}
+        :middlewares [api-for-mortals.auth/auth-mw]
+        :header-params [authorization :- String]
+        (ok (:identity request)))
+      auth-backend)
 
-      (wrap-authentication
-        (GET* "/users/:id" {:as request}
-          :middlewares [auth-mw]
-          :header-params [authorization :- String]
-          (ok (:identity request)))
-        auth-backend)
-
-      (POST* "/login" []
-        :body-params [username :- String
-                      password :- String]
-        (ok (login username password))))))
+    (POST* "/login" []
+      :body-params [username :- String
+                    password :- String]
+      (ok (login username password)))))
 </pre>
 </div>
-
-<div class="org-src-container">
-
-<pre class="src src-clojure">(require '[api-for-mortals.auth :as auth])
-
-(def api-app
-  (let [old-routes (-&gt; api-routes
-                     params/wrap-params
-                     json/wrap-json-response)
-        new-routes swagger/api
-        auth-routes auth/auth-api]
-    (routes  auth-routes new-routes old-routes)))
-</pre>
-</div>
-
-<p>
-further reading:
-</p>
-<ul class="org-ul">
-<li><a href="http://lucumr.pocoo.org/2013/11/17/my-favorite-database/">Armin Ronacher: My favorite database</a></li>
-<li><a href="http://www.niwi.be/2014/06/07/stateless-authentication-with-api-rest/">Andrey Antukh: Stateless authentication with API REST</a></li>
-</ul>
 </div>
 </div>
 </div>
 
+<div id="outline-container-sec-8" class="outline-2">
+<h2 id="sec-8"><span class="section-number-2">8</span> Connecting a database</h2>
+</div>
 <div id="outline-container-sec-9" class="outline-2">
-<h2 id="sec-9"><span class="section-number-2">9</span> Connecting a database</h2>
+<h2 id="sec-9"><span class="section-number-2">9</span> Integrating other HTTP services</h2>
 </div>
 <div id="outline-container-sec-10" class="outline-2">
-<h2 id="sec-10"><span class="section-number-2">10</span> Integrating other HTTP services</h2>
+<h2 id="sec-10"><span class="section-number-2">10</span> Deployment</h2>
 </div>
 <div id="outline-container-sec-11" class="outline-2">
-<h2 id="sec-11"><span class="section-number-2">11</span> Deployment</h2>
+<h2 id="sec-11"><span class="section-number-2">11</span> Automated Testing</h2>
 </div>
 <div id="outline-container-sec-12" class="outline-2">
-<h2 id="sec-12"><span class="section-number-2">12</span> Automated Testing</h2>
-</div>
-<div id="outline-container-sec-13" class="outline-2">
-<h2 id="sec-13"><span class="section-number-2">13</span> Appendix</h2>
-<div class="outline-text-2" id="text-13">
-</div><div id="outline-container-sec-13-1" class="outline-3">
-<h3 id="sec-13-1"><span class="section-number-3">13.1</span> Important Ring Concepts</h3>
-<div class="outline-text-3" id="text-13-1">
+<h2 id="sec-12"><span class="section-number-2">12</span> Appendix</h2>
+<div class="outline-text-2" id="text-12">
+</div><div id="outline-container-sec-12-1" class="outline-3">
+<h3 id="sec-12-1"><span class="section-number-3">12.1</span> Important Ring Concepts</h3>
+<div class="outline-text-3" id="text-12-1">
 <dl class="org-dl">
 <dt>Handlers</dt><dd>Ring handlers are Clojure functions taking a map representing the HTTP requests as an argument and
 return a map representing the HTTP response. Thus handlers transform requests into repsonses.
@@ -791,13 +885,24 @@ Middleware example:
 </dl>
 </div>
 </div>
-<div id="outline-container-sec-13-2" class="outline-3">
-<h3 id="sec-13-2"><span class="section-number-3">13.2</span> Frameworks / Boilerplates</h3>
-<div class="outline-text-3" id="text-13-2">
+<div id="outline-container-sec-12-2" class="outline-3">
+<h3 id="sec-12-2"><span class="section-number-3">12.2</span> Frameworks / Boilerplates</h3>
+<div class="outline-text-3" id="text-12-2">
 <ul class="org-ul">
 <li><a href="http://yogthos.net/posts/2015-02-28-Luminus-2.0.html">Luminus 2.0</a></li>
 </ul>
 </div>
+</div>
+</div>
+
+<div id="outline-container-sec-13" class="outline-2">
+<h2 id="sec-13"><span class="section-number-2">13</span> Always respond properly: Liberator</h2>
+<div class="outline-text-2" id="text-13">
+<p>
+should I include Liberator?
+or maybe just mention it?
+I suspect it not to work (well) with swagger
+</p>
 </div>
 </div>
 </div>
