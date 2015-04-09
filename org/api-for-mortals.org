@@ -1,6 +1,6 @@
 #+TITLE: Mundane Clojure for Mortals: Let's build a Web API
 #+AUTHOR: Nils Blum-Oeste
-#+EMAIL: nblu.com
+#+EMAIL: nblu@futurice.com
 #+LANGUAGE: en
 #+STARTUP: align lognotestate
 #+INFOJS_OPT: view:info toc:t
@@ -516,6 +516,7 @@
  - Adapters :: Adapters connect Ring to web servers like Jetty, http-kit, etc.
 ** Frameworks / Boilerplates
    - [[http://yogthos.net/posts/2015-02-28-Luminus-2.0.html][Luminus 2.0]]
+   - Hoplon
 
 * Always respond properly: Liberator
   should I include Liberator?
