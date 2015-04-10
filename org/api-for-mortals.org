@@ -20,31 +20,38 @@
 
 * Introduction
 
-  This project illustrates the basic of building a web API with Clojure. Empasis is on using simple approaches, allowing
-  Clojure beginners to get started easily. It's not about illustrating the best, state-of-the-art way of building such
-  an API with Clojure.
+  This project illustrates the basic of building a web API with Clojure.
+  Emphasis is on using simple approaches, allowing Clojure beginners to get
+  started easily. It's not about illustrating the best, state-of-the-art way of
+  building such an API with Clojure.
 
-  For a more sophisticated, advanced and structured approach have a look at [[https://github.com/weavejester/duct][duct]] for example.
+  You can find all relevant code and documentation on github:
+  https://github.com/nblumoe/mundane-clojure-for-mortals
+
+  For a more sophisticated, advanced and structured approach have a look at [[https://github.com/weavejester/duct][duct]]
+  for example.
 
 * Setting up a new project
 
-  You need to have [[https://www.java.com/en/download/help/index_installing.xml][Java installed]]. Things should also work with the .Net CLR, I don't have any experience or interest in
-  that. Should you try the CLR, please let me know how it goes.
-
+  You need to have [[https://www.java.com/en/download/help/index_installing.xml][Java installed]]. Things should also work with the .Net CLR, I
+  don't have any experience or interest in that. Should you try the CLR, please
+  let me know how it goes.
 
 ** Project automation and dependecy Management with Leiningen
 
-   To manage the project dependencies, build the project and handle various tasks during development we are going to use
-   Leiningen. Leiningen is a de-factor standard in the Clojure world and very mature.
+   To manage the project dependencies, build the project and handle various
+   tasks during development we are going to use Leiningen. Leiningen is a
+   de-facto standard in the Clojure world and very mature.
 
-   To get Leiningen simply follow the installation instruction on the homepage: http://leiningen.org/
+   To get Leiningen simply follow the installation instruction on the homepage:
+   http://leiningen.org/
 
-   Recently [[https://github.com/boot-clj/boot][Boot]] was introduced as an
-   interesting alternative, especially when working on an application (in contrast to library). If you are interested,
+   Recently, [[https://github.com/boot-clj/boot][Boot]] was introduced as an interesting alternative, especially when
+   working on an application (in contrast to library). If you are interested,
    please have a look at [[https://github.com/boot-clj/boot][Boot]], too!
 
-   In the following sections we are going to use Leiningen and you will learn about how to use it on the go.
-
+   In the following sections we are going to use Leiningen and you will learn
+   about how to use it on the go.
 
 ** Create your new project
 
@@ -54,13 +61,14 @@
    $ lein new api-for-mortals
    #+END_SRC
 
-   This will create a new project in a subdirectory called =api-for-mortals=. The project name is also used for the
-   Clojure namespaces being created.
+   This will create a new project in a subdirectory called =api-for-mortals=.
+   The project name is also used for the Clojure namespaces being created.
 
 ** Basic project setup
 
-   The central point for the declarative leiningen project configuration is =project.clj= which can be found in the
-   project's root directory. It should look a lot like this:
+   The central point for the declarative leiningen project configuration is
+   =project.clj= which can be found in the project's root directory. It should
+   look a lot like this:
 
    #+BEGIN_SRC clojure :tangle ../project.clj :noweb yes
    (defproject api-for-mortals "0.1.0-SNAPSHOT"
@@ -73,17 +81,21 @@
      <<project-ring>>)
    #+END_SRC
 
-   This defines your project. The first two parameters to =defproject=  are the project name and the version,
-   =:description=, =:url= and =:license= should be self explaining. =:dependencies= is a list of lists definining the
-   project's dependencies. As you can see, Clojure itself is a dependency of the project. This makes it very easy to use
-   a specific version of Clojure in your project (and another version in any other project).
+   This defines your project. The first two parameters to =defproject=  are the
+   project name and the version, =:description=, =:url= and =:license= should be
+   self explaining. =:dependencies= is a list of lists definining the project's
+   dependencies. As you can see, Clojure itself is a dependency of the project.
+   This makes it very easy to use a specific version of Clojure in your project
+   (and another version in any other project).
 
 * HTTP handling: One Ring to rule them all!
 
-  [[https://github.com/ring-clojure/ring][Ring]] is a Clojure library to handle HTTP requests with similarities from Python's WSGI and Ruby's Rack. Ring is
-  another de-factor standard in the Clojure world. Many other libraries build on top of Ring.
+  [[https://github.com/ring-clojure/ring][Ring]] is a Clojure library to handle HTTP requests with similarities to
+  Python's WSGI and Ruby's Rack. Ring is another de-facto standard in the
+  Clojure world. Many other libraries build on top of Ring.
 
-  To use it in our project, we need to add it as a dependency in =project.clj=. Add these two vectors to the depenencies:
+  To use it in our project, we need to add it as a dependency in =project.clj=.
+  Add these two vectors to the dependencies:
   #+BEGIN_SRC clojure :noweb-ref project-dependencies
   [ring/ring-core "1.3.2"]
   [ring/ring-jetty-adapter "1.3.2"]
@@ -91,12 +103,14 @@
 
   We added the core ring module and the HTTP server http-kit.
 
-  The next time we run any =lein= task, it will automatically pull the libraries from [[https://clojars.org/][Clojars]].
+  The next time we run any =lein= task, it will automatically pull the libraries
+  from [[https://clojars.org/][Clojars]].
 
 ** Handling our first HTTP request
 
-   Nothin more is needed to start building our web API. To actually handle requests, we need to define Ring handlers.
-   Handlers are functions which take a map representing the request as input and return a map representing the
+   Nothing more is needed to start building our web API. To actually handle
+   requests, we need to define Ring handlers. Handlers are functions which take
+   a map representing the request as input and return a map representing the
    response.
 
    Let's write our first handler in =src/api_for_mortals/core.clj=:
@@ -110,8 +124,9 @@
       :body (str "Hello " (:body request))})
    #+END_SRC
 
-   This simple handler is a pure function and their at no dependencies for the namespace at all! It simply transforms
-   the input map (request) to an output map (response), operating on simple, basic data structures.
+   This simple handler is a pure function and their at no dependencies for the
+   namespace at all! It simply transforms the input map (request) to an output
+   map (response), operating on simple, basic data structures.
 
 
 ** Convenience: Ring plugin for Leiningen

@@ -2,7 +2,7 @@
 <html>
 <head>
 <title>Mundane Clojure for Mortals: Let's build a Web API</title>
-<!-- 2015-04-08 Wed 18:42 -->
+<!-- 2015-04-10 Fri 14:40 -->
 <meta  charset="utf-8">
 <meta  name="generator" content="Org-mode">
 <meta  name="author" content="Nils Blum-Oeste">
@@ -198,13 +198,20 @@ for the JavaScript code in this tag.
 <h2 id="sec-1"><span class="section-number-2">1</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
-This project illustrates the basic of building a web API with Clojure. Empasis is on using simple approaches, allowing
-Clojure beginners to get started easily. It's not about illustrating the best, state-of-the-art way of building such
-an API with Clojure.
+This project illustrates the basic of building a web API with Clojure.
+Emphasis is on using simple approaches, allowing Clojure beginners to get
+started easily. It's not about illustrating the best, state-of-the-art way of
+building such an API with Clojure.
 </p>
 
 <p>
-For a more sophisticated, advanced and structured approach have a look at <a href="https://github.com/weavejester/duct">duct</a> for example.
+You can find all relevant code and documentation on github:
+<a href="https://github.com/nblumoe/mundane-clojure-for-mortals">https://github.com/nblumoe/mundane-clojure-for-mortals</a>
+</p>
+
+<p>
+For a more sophisticated, advanced and structured approach have a look at <a href="https://github.com/weavejester/duct">duct</a>
+for example.
 </p>
 </div>
 </div>
@@ -213,36 +220,38 @@ For a more sophisticated, advanced and structured approach have a look at <a hre
 <h2 id="sec-2"><span class="section-number-2">2</span> Setting up a new project</h2>
 <div class="outline-text-2" id="text-2">
 <p>
-You need to have <a href="https://www.java.com/en/download/help/index_installing.xml">Java installed</a>. Things should also work with the .Net CLR, I don't have any experience or interest in
-that. Should you try the CLR, please let me know how it goes.
+You need to have <a href="https://www.java.com/en/download/help/index_installing.xml">Java installed</a>. Things should also work with the .Net CLR, I
+don't have any experience or interest in that. Should you try the CLR, please
+let me know how it goes.
 </p>
 </div>
-
 
 <div id="outline-container-sec-2-1" class="outline-3">
 <h3 id="sec-2-1"><span class="section-number-3">2.1</span> Project automation and dependecy Management with Leiningen</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
-To manage the project dependencies, build the project and handle various tasks during development we are going to use
-Leiningen. Leiningen is a de-factor standard in the Clojure world and very mature.
+To manage the project dependencies, build the project and handle various
+tasks during development we are going to use Leiningen. Leiningen is a
+de-facto standard in the Clojure world and very mature.
 </p>
 
 <p>
-To get Leiningen simply follow the installation instruction on the homepage: <a href="http://leiningen.org/">http://leiningen.org/</a>
+To get Leiningen simply follow the installation instruction on the homepage:
+<a href="http://leiningen.org/">http://leiningen.org/</a>
 </p>
 
 <p>
-Recently <a href="https://github.com/boot-clj/boot">Boot</a> was introduced as an
-interesting alternative, especially when working on an application (in contrast to library). If you are interested,
+Recently, <a href="https://github.com/boot-clj/boot">Boot</a> was introduced as an interesting alternative, especially when
+working on an application (in contrast to library). If you are interested,
 please have a look at <a href="https://github.com/boot-clj/boot">Boot</a>, too!
 </p>
 
 <p>
-In the following sections we are going to use Leiningen and you will learn about how to use it on the go.
+In the following sections we are going to use Leiningen and you will learn
+about how to use it on the go.
 </p>
 </div>
 </div>
-
 
 <div id="outline-container-sec-2-2" class="outline-3">
 <h3 id="sec-2-2"><span class="section-number-3">2.2</span> Create your new project</h3>
@@ -258,8 +267,8 @@ To get started, create a new project using Leiningen:
 </div>
 
 <p>
-This will create a new project in a subdirectory called <code>api-for-mortals</code>. The project name is also used for the
-Clojure namespaces being created.
+This will create a new project in a subdirectory called <code>api-for-mortals</code>.
+The project name is also used for the Clojure namespaces being created.
 </p>
 </div>
 </div>
@@ -268,8 +277,9 @@ Clojure namespaces being created.
 <h3 id="sec-2-3"><span class="section-number-3">2.3</span> Basic project setup</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
-The central point for the declarative leiningen project configuration is <code>project.clj</code> which can be found in the
-project's root directory. It should look a lot like this:
+The central point for the declarative leiningen project configuration is
+<code>project.clj</code> which can be found in the project's root directory. It should
+look a lot like this:
 </p>
 
 <div class="org-src-container">
@@ -294,10 +304,12 @@ project's root directory. It should look a lot like this:
 </div>
 
 <p>
-This defines your project. The first two parameters to <code>defproject</code>  are the project name and the version,
-<code>:description</code>, <code>:url</code> and <code>:license</code> should be self explaining. <code>:dependencies</code> is a list of lists definining the
-project's dependencies. As you can see, Clojure itself is a dependency of the project. This makes it very easy to use
-a specific version of Clojure in your project (and another version in any other project).
+This defines your project. The first two parameters to <code>defproject</code>  are the
+project name and the version, <code>:description</code>, <code>:url</code> and <code>:license</code> should be
+self explaining. <code>:dependencies</code> is a list of lists definining the project's
+dependencies. As you can see, Clojure itself is a dependency of the project.
+This makes it very easy to use a specific version of Clojure in your project
+(and another version in any other project).
 </p>
 </div>
 </div>
@@ -307,12 +319,14 @@ a specific version of Clojure in your project (and another version in any other 
 <h2 id="sec-3"><span class="section-number-2">3</span> HTTP handling: One Ring to rule them all!</h2>
 <div class="outline-text-2" id="text-3">
 <p>
-<a href="https://github.com/ring-clojure/ring">Ring</a> is a Clojure library to handle HTTP requests with similarities from Python's WSGI and Ruby's Rack. Ring is
-another de-factor standard in the Clojure world. Many other libraries build on top of Ring.
+<a href="https://github.com/ring-clojure/ring">Ring</a> is a Clojure library to handle HTTP requests with similarities to
+Python's WSGI and Ruby's Rack. Ring is another de-facto standard in the
+Clojure world. Many other libraries build on top of Ring.
 </p>
 
 <p>
-To use it in our project, we need to add it as a dependency in <code>project.clj</code>. Add these two vectors to the depenencies:
+To use it in our project, we need to add it as a dependency in <code>project.clj</code>.
+Add these two vectors to the dependencies:
 </p>
 <div class="org-src-container">
 
@@ -326,7 +340,8 @@ We added the core ring module and the HTTP server http-kit.
 </p>
 
 <p>
-The next time we run any <code>lein</code> task, it will automatically pull the libraries from <a href="https://clojars.org/">Clojars</a>.
+The next time we run any <code>lein</code> task, it will automatically pull the libraries
+from <a href="https://clojars.org/">Clojars</a>.
 </p>
 </div>
 
@@ -334,8 +349,9 @@ The next time we run any <code>lein</code> task, it will automatically pull the 
 <h3 id="sec-3-1"><span class="section-number-3">3.1</span> Handling our first HTTP request</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
-Nothin more is needed to start building our web API. To actually handle requests, we need to define Ring handlers.
-Handlers are functions which take a map representing the request as input and return a map representing the
+Nothing more is needed to start building our web API. To actually handle
+requests, we need to define Ring handlers. Handlers are functions which take
+a map representing the request as input and return a map representing the
 response.
 </p>
 
@@ -355,8 +371,9 @@ Let's write our first handler in <code>src/api_for_mortals/core.clj</code>:
 </div>
 
 <p>
-This simple handler is a pure function and their at no dependencies for the namespace at all! It simply transforms
-the input map (request) to an output map (response), operating on simple, basic data structures.
+This simple handler is a pure function and their at no dependencies for the
+namespace at all! It simply transforms the input map (request) to an output
+map (response), operating on simple, basic data structures.
 </p>
 </div>
 </div>
