@@ -1,6 +1,7 @@
 # Mundane Clojure for Mortals: A simple Web API
 
-A tutorial to build a simple web API with Clojure.
+A tutorial to build a simple web API with Clojure:
+http://nblumoe.github.io/mundane-clojure-for-mortals
 
 ## License
 
